@@ -1,0 +1,22 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "aksClusterName": {
+            "value": "twdemoaks-1"
+        },
+        "vnetID": {
+            "value": "/subscriptions/30e164e9-e1bd-4108-a6f6-eec975bdb0be/resourceGroups/twdemo/providers/Microsoft.Network/virtualNetworks/twdemo-vnet"
+        },
+        "defaultWorkspaceID": {
+            "value": "/subscriptions/30e164e9-e1bd-4108-a6f6-eec975bdb0be/resourceGroups/DefaultResourceGroup-NEU/providers/Microsoft.OperationalInsights/workspaces/DefaultWorkspace-30e164e9-e1bd-4108-a6f6-eec975bdb0be-NEU"
+        },
+        "userAssignedIdentityID": {
+            "value": {
+                "resourceID" : "/subscriptions/30e164e9-e1bd-4108-a6f6-eec975bdb0be/resourceGroups/twdemo/providers/Microsoft.ManagedIdentity/userAssignedIdentities/twdemouami",
+                "clientID" : "81c59bd4-b204-4cc2-a403-a5005e8f6d18",
+                "objectID" : "247b6c06-0524-4abb-bec8-38665011b0c8"
+            }
+        }
+    }
+}

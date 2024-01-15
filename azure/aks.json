@@ -1,0 +1,235 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "aksClusterName": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "vnetID": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "defaultWorkspaceID": {
+            "defaultValue": "",
+            "type": "String"
+        },
+        "userAssignedIdentityID": {
+            "defaultValue": "",
+            "type": "object"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.ContainerService/managedClusters",
+            "apiVersion": "2023-08-02-preview",
+            "name": "[parameters('aksClusterName')]",
+            "location": "northeurope",
+            "sku": {
+                "name": "Base",
+                "tier": "Free"
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "kubernetesVersion": "1.27.7",
+                "dnsPrefix": "[concat(parameters('aksClusterName'), '-dns')]",
+                "agentPoolProfiles": [
+                    {
+                        "name": "twdemo",
+                        "count": 1,
+                        "vmSize": "Standard_DS2_v2",
+                        "osDiskSizeGB": 128,
+                        "osDiskType": "Managed",
+                        "kubeletDiskType": "OS",
+                        "vnetSubnetID": "[concat(parameters('vnetID'), '/subnets/default')]",
+                        "maxPods": 110,
+                        "type": "VirtualMachineScaleSets",
+                        "enableAutoScaling": false,
+                        "powerState": {
+                            "code": "Running"
+                        },
+                        "orchestratorVersion": "1.27.7",
+                        "enableNodePublicIP": false,
+                        "mode": "User",
+                        "osType": "Linux",
+                        "osSKU": "Ubuntu",
+                        "enableFIPS": false,
+                        "securityProfile": {
+                            "sshAccess": "LocalUser"
+                        }
+                    },
+                    {
+                        "name": "agentpool",
+                        "count": 1,
+                        "vmSize": "Standard_DS2_v2",
+                        "osDiskSizeGB": 128,
+                        "osDiskType": "Managed",
+                        "kubeletDiskType": "OS",
+                        "vnetSubnetID": "[concat(parameters('vnetID'), '/subnets/default')]",
+                        "maxPods": 110,
+                        "type": "VirtualMachineScaleSets",
+                        "enableAutoScaling": false,
+                        "powerState": {
+                            "code": "Running"
+                        },
+                        "orchestratorVersion": "1.27.7",
+                        "enableNodePublicIP": true,
+                        "mode": "System",
+                        "osType": "Linux",
+                        "osSKU": "AzureLinux",
+                        "enableFIPS": false,
+                        "securityProfile": {
+                            "sshAccess": "LocalUser"
+                        }
+                    }
+                ],
+                "servicePrincipalProfile": {
+                    "clientId": "msi"
+                },
+                "addonProfiles": {
+                    "azureKeyvaultSecretsProvider": {
+                        "enabled": false
+                    },
+                    "azurepolicy": {
+                        "enabled": false
+                    },
+                    "omsAgent": {
+                        "enabled": true,
+                        "config": {
+                            "logAnalyticsWorkspaceResourceID": "[parameters('defaultWorkspaceID')]",
+                            "useAADAuth": "true"
+                        }
+                    }
+                },
+                "nodeResourceGroup": "[concat('MC_twdemo_', parameters('aksClusterName'), '_northeurope')]",
+                "enableRBAC": true,
+                "supportPlan": "KubernetesOfficial",
+                "networkProfile": {
+                    "networkPlugin": "kubenet",
+                    "networkPolicy": "none",
+                    "loadBalancerSku": "Standard",
+                    "loadBalancerProfile": {
+                        "managedOutboundIPs": {
+                            "count": 1
+                        },
+                        "effectiveOutboundIPs": [
+                        ],
+                        "backendPoolType": "nodeIPConfiguration"
+                    },
+                    "podCidr": "10.244.0.0/16",
+                    "serviceCidr": "10.0.0.0/16",
+                    "dnsServiceIP": "10.0.0.10",
+                    "outboundType": "loadBalancer",
+                    "podCidrs": [
+                        "10.244.0.0/16"
+                    ],
+                    "serviceCidrs": [
+                        "10.0.0.0/16"
+                    ],
+                    "ipFamilies": [
+                        "IPv4"
+                    ]
+                },
+                "identityProfile": {
+                    "kubeletidentity": {
+                        "resourceId": "[parameters('userAssignedIdentityID').resourceID]",
+                        "clientId": "[parameters('userAssignedIdentityID').clientID]",
+                        "objectId": "[parameters('userAssignedIdentityID').objectID]"
+                    }
+                },
+                "autoUpgradeProfile": {
+                    "upgradeChannel": "none",
+                    "nodeOSUpgradeChannel": "NodeImage"
+                },
+                "disableLocalAccounts": false,
+                "securityProfile": {},
+                "storageProfile": {
+                    "diskCSIDriver": {
+                        "enabled": true,
+                        "version": "v1"
+                    },
+                    "fileCSIDriver": {
+                        "enabled": true
+                    },
+                    "snapshotController": {
+                        "enabled": true
+                    }
+                },
+                "oidcIssuerProfile": {
+                    "enabled": false
+                },
+                "workloadAutoScalerProfile": {},
+                "metricsProfile": {
+                    "costAnalysis": {
+                        "enabled": false
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.ContainerService/managedClusters/agentPools",
+            "apiVersion": "2023-08-02-preview",
+            "name": "[concat(parameters('aksClusterName'), '/agentpool')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName'))]"
+            ],
+            "properties": {
+                "count": 1,
+                "vmSize": "Standard_DS2_v2",
+                "osDiskSizeGB": 128,
+                "osDiskType": "Managed",
+                "kubeletDiskType": "OS",
+                "vnetSubnetID": "[concat(parameters('vnetID'), '/subnets/default')]",
+                "maxPods": 110,
+                "type": "VirtualMachineScaleSets",
+                "enableAutoScaling": false,
+                "powerState": {
+                    "code": "Running"
+                },
+                "orchestratorVersion": "1.27.7",
+                "enableNodePublicIP": true,
+                "mode": "System",
+                "osType": "Linux",
+                "osSKU": "AzureLinux",
+                "enableFIPS": false,
+                "securityProfile": {
+                    "sshAccess": "LocalUser"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.ContainerService/managedClusters/agentPools",
+            "apiVersion": "2023-08-02-preview",
+            "name": "[concat(parameters('aksClusterName'), '/twdemo')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerService/managedClusters', parameters('aksClusterName'))]"
+            ],
+            "properties": {
+                "count": 1,
+                "vmSize": "Standard_DS2_v2",
+                "osDiskSizeGB": 128,
+                "osDiskType": "Managed",
+                "kubeletDiskType": "OS",
+                "vnetSubnetID": "[concat(parameters('vnetID'), '/subnets/default')]",
+                "maxPods": 110,
+                "type": "VirtualMachineScaleSets",
+                "enableAutoScaling": false,
+                "powerState": {
+                    "code": "Running"
+                },
+                "orchestratorVersion": "1.27.7",
+                "enableNodePublicIP": false,
+                "mode": "User",
+                "osType": "Linux",
+                "osSKU": "Ubuntu",
+                "enableFIPS": false,
+                "securityProfile": {
+                    "sshAccess": "LocalUser"
+                }
+            }
+        }
+    ]
+}

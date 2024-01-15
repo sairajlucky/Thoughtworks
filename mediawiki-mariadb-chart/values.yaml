@@ -1,0 +1,16 @@
+mediawiki:
+  image:
+    repository: "docker.io/bitnami/mediawiki"
+    tag: "latest"
+  persistence:
+    enabled: true
+
+mariadb:
+  image:
+    repository: "docker.io/bitnami/mariadb"
+    tag: "latest"
+  auth:
+    rootPassword: "your_database_root_password"
+    password: "your_mediawiki_database_password"
+  service:
+    type: LoadBalancer
