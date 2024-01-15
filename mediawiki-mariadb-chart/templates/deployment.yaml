@@ -2,25 +2,71 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "mediawiki-mariadb-chart.fullname" . }}
-  labels:
-    app.kubernetes.io/name: {{ include "mediawiki-mariadb-chart.name" . }}
-    helm.sh/chart: {{ include "mediawiki-mariadb-chart.chart" . }}
+  name: {{ .Values.mediawiki.name }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.mediawiki.replicas }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "mediawiki-mariadb-chart.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      app: {{ .Values.mediawiki.name }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "mediawiki-mariadb-chart.name" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
+        app: {{ .Values.mediawiki.name }}
     spec:
+      volumes:
+        - name: tmpdir
+          emptyDir: { }
       containers:
-        - name: {{ .Chart.Name }}
-          image: "{{ .Values.mediawiki.image.repository }}:{{ .Values.mediawiki.image.tag }}"
+        - name: {{ .Values.mediawiki.container.name }}
+          image: {{ .Values.mediawiki.container.image.repository }}:{{ .Values.mediawiki.container.image.tag }}
+          imagePullPolicy: Always
+          securityContext:
+            readOnlyRootFilesystem: false
+          volumeMounts:
+            - name: tmpdir
+              mountPath: /tmp  # Corrected the escape character
+          resources:
+            requests:
+              cpu: {{ .Values.mediawiki.container.requests.cpu | quote }}
+              memory: {{ .Values.mediawiki.container.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.mediawiki.container.limits.cpu | quote }}
+              memory: {{ .Values.mediawiki.container.limits.memory | quote }}
           ports:
             - name: http
               containerPort: 80
+          env:
+            - name: MEDIAWIKI_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mediawiki.secret.name | quote }}
+                  key: MEDIAWIKI_DATABASE_PASSWORD                  
+
+        - name: {{ .Values.mariadb.container.name }}
+          image: {{ .Values.mariadb.container.image.repository }}:{{ .Values.mariadb.container.image.tag }}
+          imagePullPolicy: Always
+          securityContext:
+            readOnlyRootFilesystem: false
+          volumeMounts:
+            - name: tmpdir
+              mountPath: /tmp  # Corrected the escape character
+          resources:
+            requests:
+              cpu: {{ .Values.mariadb.container.requests.cpu | quote }}
+              memory: {{ .Values.mariadb.container.requests.memory | quote }}
+            limits:
+              cpu: {{ .Values.mariadb.container.limits.cpu | quote }}
+              memory: {{ .Values.mariadb.container.limits.memory | quote }}  
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mariadb.secret.name }}
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mariadb.secret.name }}
+                  key: MYSQL_PASSWORD
+          ports:
+            - containerPort: 3306

@@ -1,16 +1,41 @@
+# values.yaml
 mediawiki:
-  image:
-    repository: "docker.io/bitnami/mediawiki"
-    tag: "latest"
-  persistence:
-    enabled: true
+  name: mediawiki
+  replicas: 1
+  secret:
+    name: mediawiki-db-secret 
+    data:
+      password: "your_mediawiki_database_password" 
+  container:
+    name: mediawiki
+    requests:
+      cpu: "50m"
+      memory: "100Mi"
+    limits:
+      cpu: "100m"
+      memory: "200Mi"
+    image:
+      repository: "bitnami/mediawiki"
+      tag: "latest"    
 
 mariadb:
-  image:
-    repository: "docker.io/bitnami/mariadb"
-    tag: "latest"
-  auth:
-    rootPassword: "your_database_root_password"
-    password: "your_mediawiki_database_password"
+  name: mariadb
+  replicas: 1
+  secret:
+    name: mariadb-db-secret
+    data:
+      rootPassword: "your_mysql_root_password"
+      password: "your_mysql_password"
   service:
-    type: LoadBalancer
+    type: LoadBalancer   
+  container:
+    name: mariadb
+    requests:
+      cpu: "50m"
+      memory: "100Mi"
+    limits:
+      cpu: "100m"
+      memory: "200Mi"
+    image:
+      repository: "bitnami/mariadb"
+      tag: "latest"
